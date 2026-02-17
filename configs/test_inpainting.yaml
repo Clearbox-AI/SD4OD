@@ -1,0 +1,17 @@
+analysis:
+  multiplier: 1.0  # Don't expand — just fill gaps
+
+inpainting:
+  max_defects_per_image: 1
+  max_cost_usd: 0.10          # 5 images at $0.02 each
+  prompt_template: >-
+    {prompt}. The {class_name} should appear directly on the surface of
+    the laptop lid, matching the existing material and lighting.
+    Keep the rest of the image unchanged. Photorealistic.
+  class_prompts:
+    Scratch:
+      - "A thin hairline scratch on the smooth metal surface"
+      - "A light surface scratch mark, subtle and natural"
+      - "A shallow linear scratch across the surface"
+  default_prompts:
+    - "A realistic surface imperfection, subtle and natural-looking"

@@ -1,0 +1,13 @@
+inpainting:
+  provider: diffusers
+  model: runwayml/stable-diffusion-inpainting
+  device: auto
+  use_fp16: true
+  num_inference_steps: 50
+  strength: 0.75
+  guidance_scale: 7.5
+  class_prompts:
+    Scratch:
+      - "A thin scratch on the smooth surface"
+      - "A visible scratch mark on the laptop lid"
+      - "A light surface scratch, barely visible under certain angles"

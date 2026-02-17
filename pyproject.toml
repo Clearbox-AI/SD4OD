@@ -1,0 +1,62 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "synthdet"
+version = "0.1.0"
+description = "Synthetic data generation for object detection datasets"
+readme = {text = "Synthetic data generation for object detection datasets.", content-type = "text/plain"}
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = [
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+    "numpy>=1.24",
+    "opencv-python>=4.8",
+    "Pillow>=10.0",
+    "albumentations>=1.3",
+    "tqdm>=4.65",
+    "rich>=13.0",
+]
+
+[project.optional-dependencies]
+generation = [
+    "diffusers>=0.25",
+    "accelerate>=0.25",
+    "safetensors>=0.4",
+]
+annotation = [
+    "transformers>=4.36",
+]
+embeddings = [
+    "open-clip-torch>=2.24",
+]
+scraping = [
+    "icrawler>=0.6",
+    "requests>=2.31",
+    "beautifulsoup4>=4.12",
+]
+api = [
+    "replicate>=0.22",
+    "openai>=1.6",
+    "google-genai>=1.0",
+]
+dev = [
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+    "ruff>=0.1",
+]
+all = [
+    "synthdet[generation,annotation,embeddings,scraping,api,dev]",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "integration: tests that require the real dataset on disk",
+]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
