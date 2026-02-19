@@ -130,7 +130,7 @@ def _build_transform(config: AugmentationConfig) -> A.Compose:
     return A.Compose(
         transforms,
         bbox_params=A.BboxParams(
-            format="yolo",
+            "yolo",
             label_fields=["class_ids"],
             min_visibility=0.3,
         ),

@@ -31,6 +31,7 @@ class AnnotationSource(str, enum.Enum):
     grounding_dino = "grounding_dino"
     owl_vit = "owl_vit"
     sam_refined = "sam_refined"
+    modify_annotate = "modify_annotate"
     unknown = "unknown"
 
 

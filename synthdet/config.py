@@ -146,6 +146,50 @@ class InpaintingConfig(BaseModel):
     )
 
 
+class ModifyAnnotateConfig(BaseModel):
+    """Configuration for the modify-and-annotate pipeline.
+
+    Sends clean images to Imagen controlled editing to produce damaged versions,
+    then runs an auto-annotator to detect where defects appeared.
+    """
+
+    provider: str = Field("imagen", description="Modifier provider: 'imagen'")
+    annotator: str = Field("grounding_dino", description="Auto-annotation backend: 'grounding_dino' or 'owlvit'")
+    model: str = Field("imagen-3.0-capability-001", description="Imagen model for editing")
+    control_type: str = Field("CONTROL_TYPE_CANNY", description="Control reference type (preserves edges/structure)")
+    confidence_threshold: float = Field(0.25, description="Annotator detection threshold")
+
+    class_prompts: dict[str, list[str]] = Field(
+        default_factory=dict,
+        description="Per-class damage prompts. Keys are class names, values are prompt lists.",
+    )
+    default_prompts: list[str] = Field(
+        default_factory=lambda: [
+            "Add realistic surface damage and defects to this laptop top cover",
+            "Add visible scratches and marks to this laptop surface",
+        ],
+        description="Fallback prompts when no class-specific prompts are configured.",
+    )
+
+    requests_per_minute: float = Field(15.0, description="API rate limit")
+    max_cost_usd: float = Field(10.0, description="Safety cost limit (0=unlimited)")
+    cost_per_image: float = Field(0.02, description="Cost per API call in USD")
+    max_retries: int = Field(3, description="Max retries per API call")
+    retry_delay_seconds: float = Field(1.0, description="Exponential backoff base")
+
+    sam_refine: bool = Field(False, description="Enable SAM post-processing on detected bboxes")
+    clip_verify: bool = Field(False, description="Enable CLIP-based filtering of detections")
+    min_clip_score: float = Field(0.4, description="Min CLIP score to keep a detection")
+
+    output_format: str = Field("jpg", description="Output image format")
+    output_quality: int = Field(95, description="JPEG quality (1-100)")
+
+    # Provider auth (same pattern as InpaintingConfig)
+    api_key_env_var: str = Field("GOOGLE_API_KEY", description="Env var holding the API key")
+    project: str | None = Field(None, description="GCP project for Vertex AI")
+    location: str | None = Field(None, description="GCP region for Vertex AI")
+
+
 class AnnotationConfig(BaseModel):
     """Configuration for auto-annotation (Grounding DINO / OWL-ViT)."""
 
@@ -196,6 +240,7 @@ class SynthDetConfig(BaseModel):
     analysis: AnalysisConfig = Field(default_factory=AnalysisConfig)
     compositor: CompositorConfig = Field(default_factory=CompositorConfig)
     inpainting: InpaintingConfig = Field(default_factory=InpaintingConfig)
+    modify_annotate: ModifyAnnotateConfig = Field(default_factory=ModifyAnnotateConfig)
     augmentation: AugmentationConfig = Field(default_factory=AugmentationConfig)
     annotation: AnnotationConfig = Field(default_factory=AnnotationConfig)
     sam: SAMConfig = Field(default_factory=SAMConfig)
