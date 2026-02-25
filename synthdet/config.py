@@ -219,6 +219,16 @@ class VerifierConfig(BaseModel):
     min_confidence: float = Field(0.5, description="Min CLIP score to keep annotation")
 
 
+class EmbeddingConfig(BaseModel):
+    """Configuration for embedding computation (CLIP / OpenCLIP)."""
+
+    model_name: str = Field("ViT-B-32", description="OpenCLIP model architecture name")
+    pretrained: str = Field("openai", description="Pretrained weights identifier")
+    device: str = Field("auto", description="'auto', 'cuda', 'cpu'")
+    batch_size: int = Field(32, description="Batch size for embedding computation")
+    cache_dir: str | None = Field(None, description="Directory for caching computed embeddings")
+
+
 class QualityMonitoringConfig(BaseModel):
     """Configuration for SPC-based quality monitoring."""
 
@@ -234,6 +244,85 @@ class QualityMonitoringConfig(BaseModel):
     trend_window: int = Field(7, description="Consecutive points for Western Electric trend rule")
 
 
+class TrainingConfig(BaseModel):
+    """Configuration for YOLO model training."""
+
+    model_arch: str = Field("yolov8n.pt", description="YOLO model architecture / weights")
+    epochs: int = Field(50, description="Maximum training epochs")
+    batch_size: int = Field(16, description="Training batch size")
+    imgsz: int = Field(640, description="Training image size")
+    patience: int = Field(10, description="Early stopping patience (epochs)")
+    device: str = Field("auto", description="'auto', 'cuda', 'cpu', or device index")
+    lr0: float = Field(0.01, description="Initial learning rate")
+    optimizer: str = Field("auto", description="Optimizer: 'auto', 'SGD', 'Adam', 'AdamW'")
+    workers: int = Field(8, description="Dataloader workers")
+    project: str = Field("runs/synthdet", description="Project directory for training runs")
+    name: str = Field("train", description="Experiment name")
+    resume: bool = Field(False, description="Resume from last checkpoint")
+    verbose: bool = Field(True, description="Verbose training output")
+    freeze_layers: int = Field(0, description="Number of backbone layers to freeze")
+    pretrained: bool = Field(True, description="Use pretrained weights")
+
+
+class ActiveLearningConfig(BaseModel):
+    """Configuration for the active learning feedback loop."""
+
+    max_iterations: int = Field(3, description="Maximum generate-train-evaluate iterations")
+    min_map_improvement: float = Field(0.01, description="Minimum mAP improvement to continue")
+    convergence_threshold: float = Field(
+        0.005, description="mAP improvement below this for 2 consecutive iters stops the loop"
+    )
+    accumulate_data: bool = Field(
+        True, description="Accumulate synthetic data across iterations (vs. replace)"
+    )
+    iou_threshold: float = Field(0.5, description="IoU threshold for TP/FP matching")
+    confidence_threshold: float = Field(0.25, description="Min confidence for predictions")
+    enable_quality_monitoring: bool = Field(False, description="Enable SPC quality monitoring")
+    quality_baseline_path: str | None = Field(
+        None, description="Path to saved quality baseline JSON"
+    )
+    save_intermediate_models: bool = Field(
+        True, description="Keep model weights from each iteration"
+    )
+
+
+class CopyPasteConfig(BaseModel):
+    """Configuration for copy-paste augmentation."""
+
+    enabled: bool = True
+    max_patches_per_image: int = 3
+    max_placement_attempts: int = 20
+    max_overlap_iou: float = 0.3
+    scale_jitter: tuple[float, float] = (0.7, 1.3)
+    rotation_jitter: float = 15.0
+    blend_mode: str = Field("mixed", description="Poisson blend mode: 'mixed' or 'normal'")
+    preserve_existing_bboxes: bool = True
+
+
+class WebScraperConfig(BaseModel):
+    """Configuration for web image scraping."""
+
+    search_engine: str = Field("google", description="'google' or 'bing'")
+    max_images: int = 100
+    min_width: int = 400
+    min_height: int = 300
+    file_types: list[str] = Field(default_factory=lambda: ["jpg", "jpeg", "png"])
+    dedup_hash_size: int = 8
+    requests_per_minute: float = 30.0
+    timeout_seconds: float = 30.0
+
+
+class FilterConfig(BaseModel):
+    """Configuration for CLIP-based relevance filtering."""
+
+    similarity_threshold: float = 0.25
+    reference_count: int = 20
+    model_name: str = "ViT-B-32"
+    pretrained: str = "openai"
+    device: str = "auto"
+    batch_size: int = 32
+
+
 class SynthDetConfig(BaseModel):
     """Top-level configuration for SynthDet."""
 
@@ -245,7 +334,13 @@ class SynthDetConfig(BaseModel):
     annotation: AnnotationConfig = Field(default_factory=AnnotationConfig)
     sam: SAMConfig = Field(default_factory=SAMConfig)
     verifier: VerifierConfig = Field(default_factory=VerifierConfig)
+    embedding: EmbeddingConfig = Field(default_factory=EmbeddingConfig)
     quality_monitoring: QualityMonitoringConfig = Field(default_factory=QualityMonitoringConfig)
+    training: TrainingConfig = Field(default_factory=TrainingConfig)
+    active_learning: ActiveLearningConfig = Field(default_factory=ActiveLearningConfig)
+    copy_paste: CopyPasteConfig = Field(default_factory=CopyPasteConfig)
+    web_scraper: WebScraperConfig = Field(default_factory=WebScraperConfig)
+    filter: FilterConfig = Field(default_factory=FilterConfig)
 
     @classmethod
     def from_yaml(cls, path: Path) -> SynthDetConfig:

@@ -5,6 +5,7 @@ Usage:
         [--config config.yaml]
         [--method {all,compositor,inpainting,generative,modify_annotate}]
         [--augment] [--seed 42] [--dry-run] [--validate] [--json]
+        [--train] [--train-epochs N] [--active-learning N]
 """
 
 from __future__ import annotations
@@ -123,6 +124,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--dry-run", action="store_true", help="Estimate cost without API calls")
     parser.add_argument("--validate", action="store_true", help="Validate output dataset")
     parser.add_argument("--json", action="store_true", help="Output JSON summary")
+    parser.add_argument("--train", action="store_true", help="Train YOLO after generation")
+    parser.add_argument("--train-epochs", type=int, default=None, help="Override training epochs")
+    parser.add_argument(
+        "--active-learning", type=int, default=0, metavar="N",
+        help="Run N active learning iterations (implies --train)",
+    )
     args = parser.parse_args(argv)
 
     # Configure logging
@@ -153,14 +160,25 @@ def main(argv: list[str] | None = None) -> int:
         config.dry_run = True
     if args.validate:
         config.validate_output = True
+    if args.train:
+        config.train = True
+    if args.active_learning > 0:
+        config.active_learning_iterations = args.active_learning
+        config.train = True
+    if args.train_epochs is not None:
+        config.training.epochs = args.train_epochs
 
-    # Run pipeline
+    # --- Execution branch: Active Learning ---
+    if config.active_learning_iterations > 0:
+        return _run_active_learning(args, config)
+
+    # --- Execution branch: Generate (+ optional train) ---
     result = run_pipeline(args.data_yaml, args.output, config=config, seed=args.seed)
 
-    # Output
-    if args.json:
-        print(json.dumps(_result_to_dict(result), indent=2))
-    else:
+    # Output generation results
+    out = _result_to_dict(result)
+
+    if not args.json:
         console.print()
         console.rule("[bold green]SynthDet Pipeline Report[/bold green]")
         console.print()
@@ -173,7 +191,113 @@ def main(argv: list[str] | None = None) -> int:
             for issue in result.validation_report.errors[:10]:
                 console.print(f"  [{issue.category}] {issue.message}")
             console.print()
+
+    # --- Optional single train after generation ---
+    if config.train and not result.dry_run and result.total_records > 0:
+        from synthdet.training.trainer import YOLOTrainer
+
+        trainer = YOLOTrainer(config.training)
+        data_yaml_out = result.output_dir / "data.yaml"
+        train_result = trainer.train(data_yaml_out)
+
+        out["training"] = {
+            "epochs_completed": train_result.epochs_completed,
+            "best_map50": round(train_result.best_map50, 4),
+            "best_map50_95": round(train_result.best_map50_95, 4),
+            "training_time_seconds": round(train_result.training_time_seconds, 1),
+            "best_weights": str(train_result.best_weights),
+        }
+
+        if not args.json:
+            console.print()
+            console.print(Panel(
+                f"[bold]Epochs:[/bold] {train_result.epochs_completed}\n"
+                f"[bold]mAP50:[/bold] {train_result.best_map50:.3f}\n"
+                f"[bold]mAP50-95:[/bold] {train_result.best_map50_95:.3f}\n"
+                f"[bold]Time:[/bold] {train_result.training_time_seconds:.1f}s\n"
+                f"[bold]Weights:[/bold] {train_result.best_weights}",
+                title="Training Complete",
+                border_style="blue",
+            ))
+
+    if args.json:
+        print(json.dumps(out, indent=2))
+    elif not config.train:
         console.rule("[bold]Pipeline complete[/bold]")
+    else:
+        console.rule("[bold]Pipeline + Training complete[/bold]")
+
+    return 0
+
+
+def _run_active_learning(args, config: PipelineConfig) -> int:
+    """Execute the active learning loop and print results."""
+    from synthdet.training.loop import ActiveLearningLoop
+
+    config.active_learning.max_iterations = config.active_learning_iterations
+
+    loop = ActiveLearningLoop(
+        data_yaml=args.data_yaml,
+        output_dir=args.output,
+        pipeline_config=config,
+        training_config=config.training,
+        al_config=config.active_learning,
+        seed=args.seed,
+    )
+    al_result = loop.run()
+
+    if args.json:
+        out = {
+            "active_learning": {
+                "iterations": len(al_result.iterations),
+                "final_map50": round(al_result.final_map50, 4),
+                "stopped_reason": al_result.stopped_reason,
+                "total_training_time_seconds": round(al_result.total_training_time_seconds, 1),
+                "total_cost_usd": round(al_result.total_cost_usd, 4),
+                "final_weights": str(al_result.final_weights),
+                "per_iteration": [
+                    {
+                        "iteration": ir.iteration,
+                        "map50": round(ir.map50, 4),
+                        "map50_improvement": round(ir.map50_improvement, 4),
+                        "records_generated": ir.pipeline_result.total_records,
+                    }
+                    for ir in al_result.iterations
+                ],
+            },
+        }
+        print(json.dumps(out, indent=2))
+    else:
+        console.print()
+        console.rule("[bold green]Active Learning Report[/bold green]")
+        console.print()
+
+        table = Table(title="Iteration Summary", show_lines=True)
+        table.add_column("Iter", justify="right", width=5)
+        table.add_column("Records", justify="right", width=10)
+        table.add_column("mAP50", justify="right", width=10)
+        table.add_column("Improvement", justify="right", width=12)
+
+        for ir in al_result.iterations:
+            table.add_row(
+                str(ir.iteration),
+                str(ir.pipeline_result.total_records),
+                f"{ir.map50:.3f}",
+                f"{ir.map50_improvement:+.3f}",
+            )
+        console.print(table)
+        console.print()
+        console.print(Panel(
+            f"[bold]Final mAP50:[/bold] {al_result.final_map50:.3f}\n"
+            f"[bold]Iterations:[/bold] {len(al_result.iterations)}\n"
+            f"[bold]Stopped:[/bold] {al_result.stopped_reason}\n"
+            f"[bold]Total training time:[/bold] {al_result.total_training_time_seconds:.1f}s\n"
+            f"[bold]Total cost:[/bold] ${al_result.total_cost_usd:.2f}\n"
+            f"[bold]Final weights:[/bold] {al_result.final_weights}",
+            title="Active Learning Complete",
+            border_style="green",
+        ))
+        console.rule("[bold]Done[/bold]")
 
     return 0
 

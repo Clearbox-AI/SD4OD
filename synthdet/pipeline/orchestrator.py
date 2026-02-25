@@ -30,6 +30,8 @@ from synthdet.types import (
     Dataset,
     GenerationTask,
     ImageRecord,
+    ModelPerformanceProfile,
+    QualityMetrics,
     SynthesisStrategy,
 )
 
@@ -250,6 +252,8 @@ def run_pipeline(
     output_dir: Path,
     config: PipelineConfig | None = None,
     seed: int | None = None,
+    model_profile: ModelPerformanceProfile | None = None,
+    quality_metrics: QualityMetrics | None = None,
 ) -> PipelineResult:
     """Run the full SynthDet pipeline.
 
@@ -327,7 +331,11 @@ def run_pipeline(
         analysis_cfg = synthdet.analysis.model_copy(
             update={"preferred_method": _METHOD_TO_PREFERRED.get(method, "compositor")}
         )
-        strategy = generate_synthesis_strategy(dataset, stats, analysis_cfg)
+        strategy = generate_synthesis_strategy(
+            dataset, stats, analysis_cfg,
+            model_profile=model_profile,
+            quality_metrics=quality_metrics,
+        )
         strategy = _scale_strategy(strategy, num_methods)
 
         records: list[ImageRecord] = []

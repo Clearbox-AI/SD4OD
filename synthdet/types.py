@@ -32,6 +32,7 @@ class AnnotationSource(str, enum.Enum):
     owl_vit = "owl_vit"
     sam_refined = "sam_refined"
     modify_annotate = "modify_annotate"
+    copy_paste = "copy_paste"
     unknown = "unknown"
 
 
@@ -439,6 +440,24 @@ class SynthesisStrategy:
     @property
     def has_model_feedback(self) -> bool:
         return any(s.source == "model_feedback" for s in self.active_learning_signals)
+
+
+# ---------------------------------------------------------------------------
+# Diversity analysis types
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class DiversityReport:
+    """Embedding-based diversity analysis of a dataset or split."""
+
+    num_images: int
+    embedding_dim: int
+    mean_pairwise_cosine_distance: float
+    per_class_diversity: dict[str, float]
+    coverage_ratio: float | None
+    outlier_indices: list[int]
+    outlier_z_scores: list[float]
 
 
 # ---------------------------------------------------------------------------

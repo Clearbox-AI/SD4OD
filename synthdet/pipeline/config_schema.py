@@ -11,7 +11,7 @@ from pathlib import Path
 import yaml
 from pydantic import BaseModel, Field, field_validator
 
-from synthdet.config import SynthDetConfig
+from synthdet.config import ActiveLearningConfig, SynthDetConfig, TrainingConfig
 
 VALID_METHODS = frozenset({
     "compositor",
@@ -35,6 +35,12 @@ class PipelineConfig(BaseModel):
     validate_output: bool = Field(True, description="Run dataset validation after writing.")
     augment: bool = Field(False, description="Apply classical augmentation.")
     dry_run: bool = Field(False, description="Estimate cost without calling APIs.")
+    train: bool = Field(False, description="Train YOLO after generation.")
+    active_learning_iterations: int = Field(
+        0, description="Number of active learning iterations (0=disabled, implies train)."
+    )
+    training: TrainingConfig = Field(default_factory=TrainingConfig)
+    active_learning: ActiveLearningConfig = Field(default_factory=ActiveLearningConfig)
 
     @field_validator("methods")
     @classmethod
@@ -64,7 +70,10 @@ class PipelineConfig(BaseModel):
         with open(path) as f:
             data = yaml.safe_load(f) or {}
 
-        pipeline_keys = {"methods", "train_split_ratio", "validate_output", "augment", "dry_run"}
+        pipeline_keys = {
+            "methods", "train_split_ratio", "validate_output", "augment", "dry_run",
+            "train", "active_learning_iterations", "training", "active_learning",
+        }
         pipeline_kwargs: dict = {}
         synthdet_kwargs: dict = {}
 

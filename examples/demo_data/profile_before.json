@@ -1,0 +1,20 @@
+{
+  "overall_map50": 0.42,
+  "per_bucket_map": {
+    "tiny": 0.12,
+    "small": 0.35,
+    "medium": 0.58,
+    "large": 0.63
+  },
+  "per_region_map": {
+    "top_left": 0.3,
+    "top_center": 0.38,
+    "top_right": 0.28,
+    "middle_left": 0.45,
+    "middle_center": 0.55,
+    "middle_right": 0.48,
+    "bottom_left": 0.32,
+    "bottom_center": 0.4,
+    "bottom_right": 0.35
+  }
+}

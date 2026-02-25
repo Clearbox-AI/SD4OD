@@ -1,0 +1,12 @@
+{
+  "methods": [
+    "compositor"
+  ],
+  "total_records": 124,
+  "original_count": 104,
+  "synthetic_count": 20,
+  "train_count": 124,
+  "valid_count": 7,
+  "test_count": 5,
+  "cost": 0.0
+}
