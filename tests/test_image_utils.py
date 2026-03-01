@@ -15,6 +15,7 @@ from synthdet.utils.image import (
     get_image_dimensions,
     group_augmentation_variants,
     load_image,
+    resize_if_needed,
 )
 
 
@@ -102,6 +103,48 @@ class TestPerceptualHash:
         h = compute_perceptual_hash(img)
         assert isinstance(h, str)
         int(h, 16)  # Should not raise
+
+
+class TestResizeIfNeeded:
+    def test_none_returns_original(self):
+        img = np.zeros((100, 200, 3), dtype=np.uint8)
+        result = resize_if_needed(img, None)
+        assert result is img
+
+    def test_already_small_enough(self):
+        img = np.zeros((100, 200, 3), dtype=np.uint8)
+        result = resize_if_needed(img, 200)
+        assert result is img
+
+    def test_long_edge_is_width(self):
+        img = np.zeros((100, 400, 3), dtype=np.uint8)
+        result = resize_if_needed(img, 200)
+        assert result.shape[1] == 200  # width capped
+        assert result.shape[0] == 50   # height scaled proportionally
+
+    def test_long_edge_is_height(self):
+        img = np.zeros((400, 100, 3), dtype=np.uint8)
+        result = resize_if_needed(img, 200)
+        assert result.shape[0] == 200  # height capped
+        assert result.shape[1] == 50   # width scaled proportionally
+
+    def test_aspect_ratio_preserved(self):
+        img = np.zeros((300, 600, 3), dtype=np.uint8)
+        result = resize_if_needed(img, 300)
+        # Original aspect ratio: 600/300 = 2.0
+        assert result.shape[1] == 300
+        assert result.shape[0] == 150
+        assert result.shape[1] / result.shape[0] == pytest.approx(2.0, abs=0.05)
+
+    def test_square_image(self):
+        img = np.zeros((500, 500, 3), dtype=np.uint8)
+        result = resize_if_needed(img, 250)
+        assert result.shape == (250, 250, 3)
+
+    def test_grayscale(self):
+        img = np.zeros((400, 200), dtype=np.uint8)
+        result = resize_if_needed(img, 200)
+        assert result.shape == (200, 100)
 
 
 class TestGroupAugmentationVariants:

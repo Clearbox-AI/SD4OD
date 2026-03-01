@@ -326,6 +326,13 @@ class FilterConfig(BaseModel):
 class SynthDetConfig(BaseModel):
     """Top-level configuration for SynthDet."""
 
+    max_image_size: int | None = Field(
+        None,
+        description=(
+            "Cap image long edge to this many pixels (preserves aspect ratio). "
+            "None = use original resolution. Recommended: 1280 for large images."
+        ),
+    )
     analysis: AnalysisConfig = Field(default_factory=AnalysisConfig)
     compositor: CompositorConfig = Field(default_factory=CompositorConfig)
     inpainting: InpaintingConfig = Field(default_factory=InpaintingConfig)

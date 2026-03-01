@@ -42,13 +42,16 @@ api = [
     "openai>=1.6",
     "google-genai>=1.0",
 ]
+quality = [
+    "ultralytics>=8.0",
+]
 dev = [
     "pytest>=7.4",
     "pytest-cov>=4.1",
     "ruff>=0.1",
 ]
 all = [
-    "synthdet[generation,annotation,embeddings,scraping,api,dev]",
+    "synthdet[generation,annotation,embeddings,scraping,api,quality,dev]",
 ]
 
 [tool.pytest.ini_options]

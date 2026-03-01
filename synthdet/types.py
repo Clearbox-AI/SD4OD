@@ -466,18 +466,23 @@ class DiversityReport:
 
 
 def compute_uniformity(counts: dict[Any, int]) -> float:
-    """Normalized entropy of a count distribution. 0=maximally skewed, 1=uniform."""
-    n = len(counts)  # total bins (including zeros)
+    """Coefficient-of-variation based uniformity score. 0=maximally skewed, 1=uniform.
+
+    Uses ``1 - CV / CV_max`` where CV = std/mean over all bins (including zeros)
+    and CV_max = sqrt(n-1) (the worst case: all mass in one bin).
+    """
+    n = len(counts)
     if n == 0:
         return 0.0
     if n == 1:
         return 1.0
-    values = [v for v in counts.values() if v > 0]
+    values = list(counts.values())
     total = sum(values)
     if total == 0:
         return 0.0
-    entropy = -sum((v / total) * math.log(v / total) for v in values if v > 0)
-    max_entropy = math.log(n)
-    if max_entropy == 0:
-        return 0.0
-    return entropy / max_entropy
+    mean = total / n
+    variance = sum((v - mean) ** 2 for v in values) / n
+    std = variance**0.5
+    cv = std / mean
+    max_cv = (n - 1) ** 0.5
+    return max(0.0, 1.0 - cv / max_cv)
