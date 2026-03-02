@@ -127,7 +127,7 @@ class BBox:
     def to_yolo_line(self) -> str:
         """Serialize to a YOLO label line: 'class_id x y w h'."""
         return (
-            f"{self.class_id} "
+            f"{int(self.class_id)} "
             f"{self.x_center:.6f} {self.y_center:.6f} "
             f"{self.width:.6f} {self.height:.6f}"
         )
