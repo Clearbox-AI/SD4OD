@@ -4,7 +4,14 @@ Synthetic data generation for object detection datasets (YOLO format).
 
 SD4OD automates the creation of synthetic training data for object detection models. The primary use case (included in the examples folder) is augmenting a laptop defect detection dataset (scratches, stains, broken bezels) for YOLO-based automated grading in refurbishment workshops. The library generalizes to any object detection task.
 
----
+<br>
+<p align="center">
+  <img src="https://www.ai4europe.eu/sites/default/files/2023-10/euROBIN_logo.png" alt="euROBIN Logo" height="80">
+</p>
+<p align="center">
+  <em>This project is supported by the euROBIN network.</em>
+</p>
+<br>
 
 ## Introduction
 
