@@ -1,14 +1,14 @@
-# SynthDet
+# SD4OD
 
 Synthetic data generation for object detection datasets (YOLO format).
 
-SynthDet automates the creation of synthetic training data for object detection models. The primary use case is augmenting a laptop defect detection dataset (scratches, stains, broken bezels) for YOLO-based automated grading in refurbishment workshops. The library generalizes to any object detection task.
+SD4OD automates the creation of synthetic training data for object detection models. The primary use case (included in the examples folder) is augmenting a laptop defect detection dataset (scratches, stains, broken bezels) for YOLO-based automated grading in refurbishment workshops. The library generalizes to any object detection task.
 
 ---
 
 ## Introduction
 
-SynthDet is a modular pipeline that bridges the gap between small, imbalanced defect datasets and the volume needed to train robust YOLO detectors. It analyzes an existing YOLO dataset, identifies statistical gaps (underrepresented classes, size buckets, spatial regions, aspect ratios), and generates targeted synthetic images to fill those gaps using four complementary approaches.
+SD4OD is a modular pipeline that bridges the gap between small, imbalanced defect datasets and the volume needed to train robust YOLO detectors. It analyzes an existing YOLO dataset, identifies statistical gaps (underrepresented classes, size buckets, spatial regions, aspect ratios), and generates targeted synthetic images to fill those gaps using four complementary approaches.
 
 ### Library overview
 

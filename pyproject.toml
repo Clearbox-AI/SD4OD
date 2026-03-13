@@ -7,7 +7,7 @@ name = "synthdet"
 version = "0.1.0"
 description = "Synthetic data generation for object detection datasets"
 readme = {text = "Synthetic data generation for object detection datasets.", content-type = "text/plain"}
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 license = "MIT"
 dependencies = [
     "pydantic>=2.0",
