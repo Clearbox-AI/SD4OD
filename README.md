@@ -1,4 +1,4 @@
-# SD4OD
+# SD4OD - SYNERWEEE demo
 
 Synthetic data generation for object detection datasets (YOLO format).
 
